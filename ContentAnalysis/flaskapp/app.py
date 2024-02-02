@@ -1,14 +1,25 @@
-from flask import Flask, request, jsonify, redirect, url_for
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from database import *
+import os
+import jwt
+import datetime
 
 app = Flask(__name__)
+secret_key = os.urandom(32)
 CORS(app)
+
+SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'fallback_secret_key_here')
 
 @app.route('/')
 def home():
     return 'Welcome to my Flask app!'
+
+def create_access_token(identity, expires_delta):
+    exp = datetime.datetime.utcnow() + expires_delta
+    token = jwt.encode({'identity': identity, 'exp': exp}, SECRET_KEY, algorithm='HS256')
+    return token
 
 @app.route('/signup', methods=['POST'])
 def signup():
@@ -34,18 +45,17 @@ def signup():
 
 @app.route('/login', methods=['POST'])
 def login():
-    users = db.users
+    users = db.UserInfo
     data = request.json
-
     username = data.get('username')
     password = data.get('password')
-
     user = users.find_one({'username': username})
 
-    if not user or not check_password_hash(user['password_hash'], password):
+    if user and check_password_hash(user['password_hash'], password):
+        access_token = create_access_token(identity=username, expires_delta=datetime.timedelta(days=1))
+        return jsonify(access_token=access_token), 200
+    else:
         return jsonify({"message": "Invalid username or password"}), 401
     
-    return jsonify({"message": "Logged in successfully"}), 200
-
 if __name__ == '__main__':
     app.run(debug=True)
