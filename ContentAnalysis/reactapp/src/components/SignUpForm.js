@@ -63,9 +63,10 @@ function SignUpForm() {
         backgroundColor: 'rgba(255, 255, 255, 0.7)',
       };
     
-    useEffect(() => {
+      useEffect(() => {
         const originalStyle = window.getComputedStyle(document.body).background;
-        document.body.style.background = `url(${background}) center/cover no-repeat`;
+        document.body.style.background = `url(${background}) no-repeat center center fixed`;
+        document.body.style.backgroundSize = 'cover';
         return () => {
             document.body.style.background = originalStyle;
         };

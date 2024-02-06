@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../images/logo.png';
 import background from '../images/200.gif';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { AuthContext } from '../AuthContext';
 
 function LoginForm() {
     const [formData, setFormData] = useState({
         username: '',
         password: ''
     });
+
+    const { login } = useContext(AuthContext);
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
@@ -31,17 +34,20 @@ function LoginForm() {
                     password: formData.password,
                 }),
             });
-
+        
             if (!response.ok) {
-                console.error('Fetch error:', response.status);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            navigate('/home'); 
+        
+            const { access_token, username } = await response.json();
+            login(username);
+            navigate('/home');
         } catch (error) {
             setError('Failed to log in');
             console.error('There has been a problem with your fetch operation:', error);
         }
-    };
+
+    }
 
     const inputWrapperStyle = {
         width: '95%',
@@ -54,12 +60,13 @@ function LoginForm() {
 
     useEffect(() => {
         const originalStyle = window.getComputedStyle(document.body).background;
-        document.body.style.background = `url(${background}) center/cover no-repeat`;
+        document.body.style.background = `url(${background}) no-repeat center center fixed`;
+        document.body.style.backgroundSize = 'cover';
         return () => {
             document.body.style.background = originalStyle;
         };
     }, []);
-
+    
     return (
         <div className="container mt-5">
             <div className="row justify-content-center">

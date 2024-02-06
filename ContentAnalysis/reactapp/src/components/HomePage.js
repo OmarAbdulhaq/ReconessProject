@@ -1,21 +1,50 @@
-import React, {useState} from 'react';
+import React, { useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import logo from '../images/logo.png';
 import userImg from '../images/user.png';
 import { useDropzone } from 'react-dropzone';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import backgroundImage from '../images/background.webp';
+import { AuthContext } from '../AuthContext';
 
 function HomePage() {
-    const { getRootProps, getInputProps, isDragActive } = useDropzone({
-        onDrop: (acceptedFiles) => {
-            console.log(acceptedFiles);
-            alert(`File uploaded: ${acceptedFiles[0].name}`);
-        },
-    });
-
     const [files, setFiles] = useState([]);
+    const { user } = useContext(AuthContext);
 
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+        onDrop: async (acceptedFiles) => {
+            if (acceptedFiles.length > 0) {
+                const file = acceptedFiles[0];
+                const formData = new FormData();
+                formData.append("file", file, file.name);
+    
+                try {
+                    const username = user.username;
+                    formData.append("username", username);
+    
+                    const response = await fetch('http://localhost:5000/medialysis', {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        console.log('Upload successful:', result);
+                        alert(`File uploaded successfully.`);
+                    } else {
+                        throw new Error('Upload failed');
+                    }
+                } catch (error) {
+                    console.error('Error uploading file:', error);
+                    alert('Error uploading file');
+                }
+            } else {
+                alert('No files selected');
+            }
+        },
+        multiple: false,
+    });
+    
     const handleUpload = () => {
         alert(`Analyzing: ${files.map(file => file.name).join(', ')}`);
     };
@@ -114,7 +143,7 @@ function HomePage() {
                     <div className="dropdown">
                         <Link to="#" className="d-flex align-items-center text-black text-decoration-none dropdown-toggle" id="dropdownUser1" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <img src={userImg} alt="User" width="32" height="32" className="rounded-circle me-2 fs-5"  />
-                            <strong>User</strong>
+                            <strong>{user ? user.username : 'User'}</strong>
                         </Link>
                         <ul className="dropdown-menu text-small shadow" style={{ position: 'absolute' }} aria-labelledby="dropdownUser1">
                             <li><Link className="dropdown-item fs-5" to="/settings">Settings</Link></li>
