@@ -121,6 +121,12 @@ def medialysis():
     if not file or file.filename == '':
         return jsonify({"msg": "No file provided"}), 400
 
+    file.seek(0, os.SEEK_END)
+    file_length = file.tell()
+    file.seek(0)
+    max_video_size_bytes = 50 * 1024 * 1024
+    max_audio_size_bytes = 50 * 1024 * 1024
+
     filename = secure_filename(file.filename)
     file_type = mimetypes.guess_type(filename)[0]
     user_data_dir = os.path.join("UserData", username)
@@ -129,13 +135,13 @@ def medialysis():
     file.save(file_path)
 
     try:
-        if file_type.startswith('video/'):
-            video_results = VFERPipeline.process(file_path) + \
-                            SERPipeline.process(file_path) + \
-                            SAPipeline.process(file_path, is_video=True)
-        elif file_type.startswith('audio/'):
-            audio_results = SERPipeline.process(file_path) + \
-                            SAPipeline.process(file_path, is_audio=True)
+        if file_type.startswith('video/') and file_length > max_video_size_bytes:
+            video_results = [VFERPipeline.process(file_path),
+                            SERPipeline.process(file_path),
+                            SAPipeline.process(file_path, is_video=True)]
+        elif file_type.startswith('audio/') and file_length > max_audio_size_bytes:
+            audio_results = [SERPipeline.process(file_path),
+                            SAPipeline.process(file_path, is_audio=True)]
         elif file_type.startswith('image/'):
             image_results = IFERPipeline.process(file_path)
         else:
