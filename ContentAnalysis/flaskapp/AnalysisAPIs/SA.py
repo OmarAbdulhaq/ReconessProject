@@ -1,46 +1,68 @@
-import speech_recognition as sr
-from deepmultilingualpunctuation import PunctuationModel
+from nltk.sentiment import SentimentIntensityAnalyzer
 from nltk.tokenize import sent_tokenize
 from transformers import pipeline
+from deepmultilingualpunctuation import PunctuationModel
+from collections import Counter
+from joblib import dump, load
+import soundfile as sf
+import torchaudio
+import torch
+import os
 
-def setContextConfigs():
-    r = sr.Recognizer()
-    punctuator = PunctuationModel()
-    sentiment_model = pipeline("text-classification", model="bhadresh-savani/distilbert-base-uncased-emotion")
-    return r, punctuator, sentiment_model
+class SAPipeline:
+    def __init__(self):
+        self.asr_pipeline = pipeline("automatic-speech-recognition", model="openai/whisper-small")
+        self.punctuator = PunctuationModel()
+        self.sentiment_model = pipeline("text-classification", model="bhadresh-savani/distilbert-base-uncased-emotion")
+        self.sia = SentimentIntensityAnalyzer()
 
-def transcribe_audio(path, recognizer):
-    with sr.AudioFile(path) as source:
-        audio = recognizer.record(source)
-        try:
-            text = recognizer.recognize_google(audio)
-            return text
-        except sr.UnknownValueError:
-            print("Google Speech Recognition could not understand the audio")
-            return None
-        except sr.RequestError as e:
-            print(f"Could not request results from Google Speech Recognition service; {e}")
-            return None
+    def transcribe_audio(self, audio_file_path):
+        speech, sample_rate = sf.read(audio_file_path, dtype="float32")
+        
+        if speech.ndim > 1:
+            speech = speech.mean(axis=1)
+        
+        if sample_rate != 16000:
+            resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
+            speech = resampler(torch.tensor(speech)).numpy()
+        
+        transcription = self.asr_pipeline(speech)
+        return transcription['text']
 
-def punctuate_text(text, punctuator):
-    punctuated_text = punctuator.restore_punctuation(text)
-    return punctuated_text
+    def analyze_emotion(self, sentences):
+        results = self.sentiment_model(sentences)
+        return [{'label': self.normalize_emotion_label(result['label']), 'score': result['score']} for result in results]
 
-def divide_to_sentences(text):
-    sentences = sent_tokenize(text)
-    return sentences
+    def normalize_emotion_label(self, label):
+        mapping = {
+            'joy': 'happy',
+            'anger': 'angry',
+            'sadness': 'sad',
+            'fear': 'others',
+            'love': 'happy',
+            'surprise': 'others',
+        }
+        return mapping.get(label, 'others')
 
-def analyze_emotion(sentences, sentiment_model):
-    results = sentiment_model(sentences)
-    return results
+    def process(self, video_filename):
+        base_filename = os.path.splitext(os.path.basename(video_filename))[0]
+        audio_file = os.path.join('UserData', base_filename + '.wav')
 
-def SAPipeline(audio_path):
-    recognizer, punctuator, sentiment_model = setContextConfigs()
-    transcribed_text = transcribe_audio(audio_path, recognizer)
-    if transcribed_text:
-        punctuated_text = punctuate_text(transcribed_text, punctuator)
-        sentences = divide_to_sentences(punctuated_text)
-        emotion_analysis = analyze_emotion(sentences, sentiment_model)
-        return emotion_analysis
-    else:
-        return []
+        transcribed_text = self.transcribe_audio(audio_file)
+        if transcribed_text:
+            punctuated_text = self.punctuator.restore_punctuation(transcribed_text)
+            sentences = sent_tokenize(punctuated_text)
+            emotion_analysis = self.analyze_emotion(sentences)
+            emotions = [result['label'] for result in emotion_analysis]
+            emotion_counts = Counter(emotions)
+            return emotion_counts
+        else:
+            return {}
+
+
+    def serialize(self, path):
+        dump(self, path)
+
+    @classmethod
+    def deserialize(cls, path):
+        return load(path)

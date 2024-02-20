@@ -1,0 +1,32 @@
+.sidebarStyle {
+    width: 280px;
+    flex-shrink: 0;
+    height: 100vh;
+    overflow: auto;
+    background-color: #f8f9fa;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.contentAreaStyle {
+    flex: 1;
+    height: 100vh;
+    overflow: auto;
+    background: url('../../images/tokenspage.webp') no-repeat center center fixed;
+    background-size: cover;
+}
+
+.centeredContentStyle {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    margin: auto;
+    text-align: center;
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+}

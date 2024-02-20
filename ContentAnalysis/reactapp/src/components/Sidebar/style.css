@@ -1,0 +1,12 @@
+.sidebarStyle {
+    position: 'relative';
+    width: 280px;
+    flex-shrink: 0;
+    height: 100vh;
+    overflow: auto;
+    background-color: #f8f9fa;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
