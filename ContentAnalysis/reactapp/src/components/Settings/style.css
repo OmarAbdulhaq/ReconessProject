@@ -21,3 +21,7 @@
     max-width: 600px;
     z-index: 2;
 }
+
+.label-left-align {
+    text-align: left;
+}

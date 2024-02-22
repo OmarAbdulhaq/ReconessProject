@@ -1,0 +1,53 @@
+.profile-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: 20px;
+    background-image: url('../../images/profile.webp');
+    background-size: cover;
+    background-position: center;
+}
+  
+  .user-profile {
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 8px;
+    padding: 20px;
+    width: 100%;
+    max-width: 600px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .user-info h1, .user-info h5 {
+    text-align: center;
+    color: #333;
+  }
+  
+  .user-info hr {
+    margin-top: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .analysis-dropdown .dropdown-button {
+    display: block;
+    width: auto;
+    text-align: center;
+    align-items: center;
+  }
+  
+  .analysis-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+  }
+  
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+  }
+  
+  .dropdown-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }

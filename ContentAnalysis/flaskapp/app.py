@@ -10,9 +10,9 @@ from functools import wraps
 from secrets import token_urlsafe
 from bson import ObjectId
 from nltk.sentiment import SentimentIntensityAnalyzer
-from pymongo import ReturnDocument
 
 import numpy as np
+import traceback
 import json
 import os
 
@@ -138,6 +138,78 @@ def logout():
 
     return jsonify({"msg": "Logout successful", "redirect": "/login"}), 200
 
+@app.route('/generate-backup-codes', methods=['POST'])
+def generate_backup_codes():
+    data = request.get_json()
+    
+    email = data.get('email')
+    if not email:
+        return jsonify({"message": "Email is required."}), 400
+
+    user = db.UserInfo.find_one({"email": email})
+    if not user:
+        return jsonify({"message": "User not found."}), 404
+
+    if user.get('backup_codes'):
+        return jsonify({"message": "Backup codes have already been generated for this user."}), 200
+
+    codes = [token_urlsafe(8) for _ in range(5)]
+    db.UserInfo.update_one(
+        {"email": email},
+        {"$set": {"backup_codes": codes}}
+    )
+
+    return jsonify({"backup_codes": codes}), 200
+
+
+@app.route('/reset-password-with-code', methods=['POST'])
+def reset_password_with_code():
+    data = request.get_json()
+    email = data.get('email')
+    backup_code = data.get('backup_code')
+    new_password = data.get('new_password')
+    
+    if not all([email, backup_code, new_password]):
+        return jsonify({"message": "Missing data"}), 400
+    
+    user = db.UserInfo.find_one({"email": email})
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+    
+    if backup_code not in user.get('backup_codes', []):
+        return jsonify({"message": "Invalid backup code"}), 401
+    
+    new_password_hash = generate_password_hash(new_password)
+    db.UserInfo.update_one(
+        {"email": email},
+        {
+            "$set": {"password_hash": new_password_hash},
+            "$pull": {"backup_codes": backup_code} 
+        }
+    )
+    
+    return jsonify({"message": "Password has been reset successfully"}), 200
+
+
+@app.route('/change_password', methods=['PUT'])
+def change_password():
+    data = request.get_json()
+    username = data.get('username')
+    old_password = data.get('old_password')
+    new_password = data.get('new_password')
+
+    user = db.UserInfo.find_one({"username": username})
+
+    if not user or not check_password_hash(user['password_hash'], old_password):
+        return jsonify({"message": "Invalid username or incorrect old password"}), 401
+
+    new_password_hash = generate_password_hash(new_password)
+    db.UserInfo.update_one(
+        {"username": username},
+        {"$set": {"password_hash": new_password_hash}}
+    )
+
+    return jsonify({"message": "Password changed successfully"}), 200
 
 @app.route('/change_username', methods=['PUT'])
 def change_username():
@@ -307,7 +379,7 @@ def process_video_file(file_path):
 
 @app.route('/dashboard', methods=['GET'])
 @token_required
-def get_dashboard_results(current_user):
+def get_latest_dashboard_results(current_user):
     if current_user is None:
         return jsonify({"message": "Authentication required"}), 401
 
@@ -321,6 +393,29 @@ def get_dashboard_results(current_user):
             return jsonify({"message": "No analysis records found for this user"}), 404
     except Exception as e:
         return jsonify({"error": "Failed to retrieve analysis results"}), 500
+
+@app.route('/dashboard/<username>/<videoname>', methods=['GET'])
+@token_required
+def get_specific_dashboard_results(current_user, username, videoname):
+    if current_user["username"] != username:
+        return jsonify({"message": "Unauthorized access"}), 403
+
+    user_email = current_user["email"]
+    try:
+        user_doc = db.AnalysisInfo.find_one(
+            {"user_email": user_email, "files.filename": videoname},
+            {'files.$': 1, '_id': 0}
+        )
+        if user_doc and "files" in user_doc and len(user_doc["files"]) > 0:
+            specific_file_analysis = user_doc["files"][0]
+            return jsonify(specific_file_analysis), 200
+        else:
+            return jsonify({"message": f"No analysis record found for video {videoname}"}), 404
+    except Exception as e:
+        return jsonify({"error": f"Failed to retrieve analysis results: {str(e)}"}), 500
+
+
+
 
 @app.route('/submit_comment', methods=["POST"])
 @token_required
@@ -355,6 +450,40 @@ def submit_comment(current_user):
         return jsonify({"message": "No matching analysis record found or update failed"}), 404
 
     return jsonify({"message": "Comment submitted successfully", "sentiment": sentiment}), 200
+
+
+@app.route('/user_analysis', methods=['GET'])
+@token_required
+def user_analysis(current_user):
+    try:
+        now = datetime.utcnow()
+        token_expiration = current_user.get('API_access_token_expire', now)
+        token_valid = token_expiration > now
+        days_until_expiration = (token_expiration - now).days if token_valid else 0
+
+        analysisCursor = db.AnalysisInfo.find({"user_email": current_user['email']})
+        analysis_list = []
+        for analysis in analysisCursor:
+            analysis_id = str(analysis['_id'])
+            for file in analysis.get('files', []):
+                timestamp_str = file['timestamp'].strftime('%Y-%m-%d %H:%M:%S') if file.get('timestamp') else None
+                analysis_list.append({
+                    "analysis_id": analysis_id,
+                    "filename": file['filename'],
+                    "timestamp": timestamp_str,
+                    "status": file.get('status', 'Unknown')
+                })
+        
+        response_data = {
+            "analysis": analysis_list,
+            "token_valid": token_valid,
+            "days_until_token_expiration": days_until_expiration,
+            "user_email": current_user['email']
+        }
+        return jsonify(response_data), 200
+    except Exception as e:
+        return jsonify({"error": "An unexpected error occurred"}), 500
+
 
 
 if __name__ == '__main__':

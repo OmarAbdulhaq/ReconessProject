@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Card, ButtonGroup, Button } from 'react-bootstrap';
 import { Pie, Bar } from 'react-chartjs-2';
 import loadingGif from '../../images/loading.gif';
@@ -112,12 +112,13 @@ const CommentSubmissionOverlay = ({ onClose, analysisId }) => {
 
 const DashboardPage = () => {
   const navigate = useNavigate();
+  const { username, videoname } = useParams();
   const { user } = useContext(AuthContext);
   const [isLoading, setIsLoading] = useState(true);
-  const [analysisData, setAnalysisData] = useState({ visual: {}, audio: {}, text: {} });
-  const [selectedChartGroup, setSelectedChartGroup] = useState("overall");
+  const [analysisData, setAnalysisData] = useState({});
+  const [selectedChartGroup, setSelectedChartGroup] = useState('overall');
   const [showCommentOverlay, setShowCommentOverlay] = useState(false);
-  const [analysisId, setAnalysisId] = useState("");
+  const [analysisId, setAnalysisId] = useState('');
 
   const toggleCommentOverlay = () => {
     setShowCommentOverlay(!showCommentOverlay);
@@ -125,37 +126,43 @@ const DashboardPage = () => {
 
   useEffect(() => {
     const fetchAnalysisData = async () => {
-      if (user && user.accessToken) {
-        setIsLoading(true);
-        try {
-          const response = await fetch('http://localhost:5000/dashboard', {
-            headers: { 'Authorization': `Bearer ${user.accessToken}` },
-          });
-    
-          if (!response.ok) {
-            throw new Error('Failed to fetch analysis data');
-          }
-    
-          const latestAnalysis = await response.json(); 
-          if (latestAnalysis && latestAnalysis.analysis_result) {
-            setAnalysisData(latestAnalysis.analysis_result);
-            setAnalysisId(latestAnalysis.filename);
-          } else {
-            console.log("No analysis data available.");
-          }
-        } catch (error) {
-          console.error('Error fetching analysis data:', error);
-          navigate('/');
-        } finally {
-          setIsLoading(false);
-        }
-      } else {
+      if (!user || !user.accessToken) {
         navigate('/');
+        return;
+      }
+
+      setIsLoading(true);
+      let url = 'http://localhost:5000/dashboard';
+      if (username && videoname) {
+        url = `${url}/${username}/${videoname}`;
+      }
+
+      try {
+        const response = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${user.accessToken}` },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch analysis data');
+        }
+
+        const data = await response.json();
+        if (data && data.analysis_result) {
+          setAnalysisData(data.analysis_result);
+          setAnalysisId(data.filename || ''); 
+        } else {
+          console.log("No analysis data available.");
+        }
+      } catch (error) {
+        console.error('Error fetching analysis data:', error);
+        navigate('/');
+      } finally {
+        setIsLoading(false);
       }
     };
-  
+
     fetchAnalysisData();
-  }, [user, navigate]);
+  }, [user, username, videoname, navigate]);
 
   const getOverallAnalysisSummary = (analysisData) => {
     const combinedData = { Negative: 0, Positive: 0, Neutral: 0 };

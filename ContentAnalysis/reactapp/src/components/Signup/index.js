@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import logo from '../../images/logo.png';
 import { useNavigate } from 'react-router-dom';
 import background from '../../images/login.gif';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './style.css'; 
+import { AuthContext } from '../../AuthContext.js';
 
 function SignUpForm() {
+    const { login } = useContext(AuthContext);
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -46,7 +48,9 @@ function SignUpForm() {
                 console.error('Fetch error:', response.status);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            navigate('/home'); 
+
+            alert('Now Try and login with your information!')
+            navigate('/login'); 
             
         } catch (error) {
             setError('Failed to submit form');
