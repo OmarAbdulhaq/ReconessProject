@@ -4,10 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import background from '../../images/login.gif';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './style.css'; 
-import { AuthContext } from '../../AuthContext.js';
 
 function SignUpForm() {
-    const { login } = useContext(AuthContext);
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -22,14 +20,39 @@ function SignUpForm() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const validateForm = () => {
+        const { username, email, password, passwordConfirmation } = formData;
+        
+        if (password.length < 8) {
+            setError('Password must be at least 8 characters long.');
+            return false;
+        }
+
+        const hasNumbers = /\d/.test(password);
+        const hasLetters = /[a-zA-Z]/.test(password);
+        if (!hasNumbers || !hasLetters) {
+            setError('Password must contain both letters and numbers.');
+            return false;
+        }
+
+        if (!/^[a-zA-Z0-9]+$/.test(username)) {
+            setError('Username must not contain special characters.');
+            return false;
+        }
+
+        if (password !== passwordConfirmation) {
+            setError('Passwords do not match.');
+            return false;
+        }
+
+        setError('');
+        return true;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
 
-        if (formData.password !== formData.passwordConfirmation) {
-            setError('Passwords do not match.');
-            return;
-        }
+        if (!validateForm()) return;
 
         try {
             const response = await fetch('http://localhost:5000/signup', {
