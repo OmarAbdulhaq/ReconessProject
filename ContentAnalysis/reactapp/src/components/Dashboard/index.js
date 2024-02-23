@@ -83,7 +83,6 @@ const CommentSubmissionOverlay = ({ onClose, analysisId }) => {
       }
   
       const data = await response.json();
-      console.log(data);
       alert('Comment submitted successfully.');
       onClose();
     } catch (error) {
@@ -151,7 +150,7 @@ const DashboardPage = () => {
           setAnalysisData(data.analysis_result);
           setAnalysisId(data.filename || ''); 
         } else {
-          console.log("No analysis data available.");
+          alert("No analysis data available")
         }
       } catch (error) {
         console.error('Error fetching analysis data:', error);

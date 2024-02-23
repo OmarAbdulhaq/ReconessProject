@@ -42,11 +42,9 @@ function LoginForm() {
         
             const { access_token, username } = await response.json();
             login(username, access_token);
-            console.log(username + "." + access_token)
             navigate('/');
         } catch (error) {
             setError('Failed to log in');
-            console.error('There has been a problem with your fetch operation:', error);
         }
 
     }

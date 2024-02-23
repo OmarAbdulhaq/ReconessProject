@@ -50,7 +50,7 @@ function GenerateBackupCodes() {
             }
         } catch (error) {
             setError('Failed to generate backup codes');
-            console.error('There has been a problem with your fetch operation:', error);
+            alert('There has been a problem with your fetch operation:', error);
         }
     };
 

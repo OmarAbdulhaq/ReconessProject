@@ -12,7 +12,6 @@ from bson import ObjectId
 from nltk.sentiment import SentimentIntensityAnalyzer
 
 import numpy as np
-import traceback
 import json
 import os
 
@@ -21,17 +20,18 @@ from AnalysisAPIs.SER import SERPipeline
 from AnalysisAPIs.VFER import VFERPipeline
 
 app = Flask(__name__)
-SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'FallBack_Secret_Key')
+SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'GwWt4TaQQbZ5Wp')
 app.config['SECRET_KEY'] = SECRET_KEY
 CORS(app)
 
+MAX_FILE_SIZE = 50 * 1024 * 1024 
 SA_PIPELINE_PATH = 'sa_pipeline.joblib'
 SER_PIPELINE_PATH = 'ser_pipeline.joblib'
 VFER_PIPELINE_PATH = 'vfer_pipeline.joblib'
 
-SA_PIPELINE = SAPipeline.deserialize(SA_PIPELINE_PATH) if os.path.exists(SA_PIPELINE_PATH) else SAPipeline()
-SER_PIPELINE = SERPipeline.deserialize(SER_PIPELINE_PATH) if os.path.exists(SER_PIPELINE_PATH) else SERPipeline()
-VFER_PIPELINE = VFERPipeline.deserialize(VFER_PIPELINE_PATH) if os.path.exists(VFER_PIPELINE_PATH) else VFERPipeline()
+SA_PIPELINE = SAPipeline.serialize(SA_PIPELINE_PATH) if os.path.exists(SA_PIPELINE_PATH) else SAPipeline()
+SER_PIPELINE = SERPipeline.serialize(SER_PIPELINE_PATH) if os.path.exists(SER_PIPELINE_PATH) else SERPipeline()
+VFER_PIPELINE = VFERPipeline.serialize(VFER_PIPELINE_PATH) if os.path.exists(VFER_PIPELINE_PATH) else VFERPipeline()
 sia = SentimentIntensityAnalyzer()
 
 class CustomJSONEncoder(json.JSONEncoder):
@@ -290,6 +290,12 @@ def medialysis(current_user):
     file = request.files['file']
     if file.filename == '':
         return jsonify({"message": "No selected file"}), 400
+
+    file.seek(0, os.SEEK_END)
+    file_length = file.tell()
+    file.seek(0) 
+    if file_length > MAX_FILE_SIZE:
+        return jsonify({"message": "File is larger than 50MB"}), 400
 
     filename = secure_filename(file.filename)
     user_data_dir = os.path.join("UserData", current_user["username"])

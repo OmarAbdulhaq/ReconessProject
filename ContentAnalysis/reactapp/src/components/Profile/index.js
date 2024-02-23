@@ -35,7 +35,7 @@ const UserProfilePage = () => {
         setDaysUntilTokenExpiration(data.days_until_token_expiration);
         setUserEmail(data.user_email)
       } catch (error) {
-        console.error('Error fetching user analysis:', error);
+        alert(`Error fetching user analysis: ${error.message}`);
       } finally {
         setIsLoading(false);
       }

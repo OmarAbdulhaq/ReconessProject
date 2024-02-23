@@ -31,7 +31,7 @@ function HomePage() {
         }
     
         if (files.length > 0) {
-            setIsLoading(true); 
+            setIsLoading(true);
             const file = files[0];
             const formData = new FormData();
             formData.append("file", file);
@@ -48,16 +48,18 @@ function HomePage() {
                 setIsLoading(false);
                 if (response.ok) {
                     const data = await response.json();
-                    console.log(data);
                     alert('Media uploaded successfully!');
                     navigate('/dashboard');
                 } else {
                     const errorData = await response.json();
-                    alert(`Error uploading file: ${errorData.message || response.statusText}`);
+                    if (errorData.message === "File is larger than 50MB") {
+                        alert("File is larger than 50MB. Please select a smaller file.");
+                    } else {
+                        alert(`Error uploading file: ${errorData.message || response.statusText}`);
+                    }
                 }
             } catch (error) {
                 setIsLoading(false);
-                console.error('Error uploading file:', error);
                 alert(`Error uploading file: ${error.message}`);
             }
         } else {
@@ -125,7 +127,7 @@ function HomePage() {
                         <img src={LoadingGif} alt="Loading..." style={{ width: '100px', height: '100px', marginBottom: '20px' }} />
                         <h3><b>Loading...</b></h3>
                         <p className="mt-3">Analyzing media, please wait...</p>
-                        <p className="mt-3" style={{color: "red"}}>Warning: This might take a little while, please stay in this page. The app is still under development</p>
+                        <p className="mt-3" style={{color: "red"}}>Warning: This might take a little while, please stay in this page.</p>
                         <p className="mt-3" style={{color: "red"}}>The app is still under development</p>
                     </div>
                 ) : (

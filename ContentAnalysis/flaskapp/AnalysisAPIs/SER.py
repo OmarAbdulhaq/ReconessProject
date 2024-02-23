@@ -86,10 +86,10 @@ class SERPipeline:
         emotions_counter = self.split_and_process_audio(output_wav_file, segment_length)
 
         return emotions_counter
-
+        
     def serialize(self, path):
-        dump(self, path)
+        return load(path)
 
     @classmethod
     def deserialize(cls, path):
-        return load(path)
+        dump(self, path)

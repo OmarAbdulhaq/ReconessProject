@@ -61,8 +61,8 @@ class SAPipeline:
 
 
     def serialize(self, path):
-        dump(self, path)
+        return load(path)
 
     @classmethod
     def deserialize(cls, path):
-        return load(path)
+        dump(self, path)
