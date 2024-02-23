@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';;
+import { useNavigate } from 'react-router-dom';
 import logo from '../../images/logo.png';
 import background from '../../images/login.gif';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './style.css';
 
-function ResetPasswordWithCode() {
+function ResetPassword() {
     const [formData, setFormData] = useState({
         email: '',
         backupCode: '',
@@ -29,7 +29,6 @@ function ResetPasswordWithCode() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
 
         try {
             const response = await fetch('http://localhost:5000/reset-password-with-code', {
@@ -49,7 +48,6 @@ function ResetPasswordWithCode() {
                 throw new Error(data.message || 'An error occurred while resetting your password.');
             }
 
-            setError('');
             navigate('/login');
         } catch (error) {
             setError(error.message);
@@ -116,4 +114,4 @@ function ResetPasswordWithCode() {
     );
 }
 
-export default ResetPasswordWithCode;
+export default ResetPassword;
