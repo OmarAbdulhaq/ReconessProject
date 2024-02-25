@@ -64,3 +64,4 @@ The project is dockerized as well, and it's uploaded with the docker commands, y
 - The website requires a token to use the API.
 - The backend takes time to run, since there are AI models used in the process.
 - The upload takes time to run, since there are AI models used to evaluate each face in each frame, each voice segment and each sentence mentioned in the video.
+- There might be a couple misclassifications in the APIs, which would lead to faulty results, however, it generally gives decent results.
