@@ -36,7 +36,7 @@ cd ContentAnalysis\reactapp\ (if you're at ReconessProject folder)
 npm install
 ```
 MongoDB database named ContentAnalysis, with 2 collections: UserInfo, and AnalysisInfo.
-
+##
 ### Usage
 You can easily use this application via terminal, in order to use it, you have to write these following commands:
 For backend:
@@ -53,10 +53,10 @@ npm start
 ```
 
 The frontend is located at localhost:3000, the backend is located at localhost:5000
-
+##
 ### Docker
 The project is dockerized as well, and it's uploaded with the docker commands, you can use docker to run the application as well after creating the container and running the images codes.
-
+##
 ### Notes
 - The website is still under development level, improvements will happen in the near future.
 - The website restricts users to upload videos under 50 mbs.
